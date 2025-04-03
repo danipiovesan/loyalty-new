@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  loyalty-app:
+    image: ghcr.io/danipiovesan/loyalty-new:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=sqlite:///app/data/loyalty.db
+      - PORT=8080
+      - HOST=0.0.0.0
+    volumes:
+      - loyalty-test-data:/app/data
+    deploy:
+      replicas: 1
+
+volumes:
+  loyalty-test-data:

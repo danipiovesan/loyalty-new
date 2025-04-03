@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  loyalty-app:
+    image: loyalty-app
+    build:
+      context: https://github.com/danipiovesan/loyalty-new.git#main
+    deploy:
+      replicas: 1
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=sqlite:///app/data/loyalty.db
+    volumes:
+      - loyalty-test-data:/app/data
+
+volumes:
+  loyalty-test-data:
