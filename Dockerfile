@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine as build
+FROM node:18-alpine as builder
 
 WORKDIR /app
 
@@ -20,18 +20,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install production dependencies
 COPY package*.json ./
-
-# Install production dependencies only
 RUN npm install --production
 
-# Copy built files from build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/server.js ./server.js
+# Copy built files and server
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.js ./
+COPY --from=builder /app/src/lib ./src/lib
 
-# Copy database schema
-COPY src/lib/db/schema.sql ./src/lib/db/
+# Create data directory
+RUN mkdir -p /app/data
 
 # Expose port
 EXPOSE 8080
