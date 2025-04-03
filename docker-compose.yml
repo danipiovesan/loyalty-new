@@ -1,0 +1,56 @@
+version: '3.8'
+
+networks:
+  loyalty-network:
+    name: loyalty-network
+    driver: bridge
+  traefik-public:
+    external: true
+
+services:
+  loyalty-app:
+    build: .
+    container_name: loyalty-app
+    expose:
+      - "8080"  # Expõe internamente, Traefik gerenciará o acesso externo
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=sqlite:///app/data/loyalty.db
+    volumes:
+      - loyalty-data:/app/data
+    depends_on:
+      - loyalty-db-init
+    networks:
+      - loyalty-network
+      - traefik-public
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      # Router HTTP
+      - "traefik.http.routers.loyalty.rule=Host(`fidelidade.pioxiiodontologia.com.br`)"
+      - "traefik.http.routers.loyalty.entrypoints=websecure"
+      - "traefik.http.routers.loyalty.tls=true"
+      - "traefik.http.routers.loyalty.tls.certresolver=letsencrypt"
+      # Service
+      - "traefik.http.services.loyalty.loadbalancer.server.port=8080"
+      # Middleware para redirecionar HTTP para HTTPS
+      - "traefik.http.routers.loyalty-http.rule=Host(`fidelidade.pioxiiodontologia.com.br`)"
+      - "traefik.http.routers.loyalty-http.entrypoints=web"
+      - "traefik.http.routers.loyalty-http.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+
+  loyalty-db-init:
+    build: .
+    container_name: loyalty-db-init
+    command: node src/lib/db/init.js
+    volumes:
+      - loyalty-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///app/data/loyalty.db
+    networks:
+      - loyalty-network
+
+volumes:
+  loyalty-data:
+    name: loyalty-data-prod
